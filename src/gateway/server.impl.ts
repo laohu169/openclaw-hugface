@@ -535,7 +535,9 @@ export async function startGatewayServer(
       cwd: process.cwd(),
     });
     if (!resolvedRoot) {
-      const ensureResult = await ensureControlUiAssetsBuilt(gatewayRuntime);
+      // 在 Hugging Face 等资源受限环境，跳过阻塞的 Vite 编译
+      // const ensureResult = await ensureControlUiAssetsBuilt(gatewayRuntime);
+      const ensureResult = { ok: true, message: "Skipping build on restricted environment" };
       if (!ensureResult.ok && ensureResult.message) {
         log.warn(`gateway: ${ensureResult.message}`);
       }
@@ -1038,6 +1040,12 @@ export async function startGatewayServer(
     httpServer,
     httpServers,
   });
+
+  // 🚀 自循环 HTTP 心跳：每 5 分钟自我访问一次，防止 Hugging Face 判定为闲置并休眠
+  setInterval(() => {
+    fetch(`http://127.0.0.1:${port}`).catch(() => {});
+    log.info("[Keep-Alive] Self-ping performed to maintain Running status.");
+  }, 5 * 60 * 1000);
 
   return {
     close: async (opts) => {
