@@ -270,6 +270,9 @@ export async function startGatewayServer(
   const minimalTestGateway =
     process.env.VITEST === "1" && process.env.OPENCLAW_TEST_MINIMAL_GATEWAY === "1";
 
+  // 🚀 强制监听 0.0.0.0 确保 Hugging Face 外网探测变绿
+  opts.host = "0.0.0.0";
+
   // Ensure all default port derivations (browser/canvas) see the actual runtime port.
   process.env.OPENCLAW_GATEWAY_PORT = String(port);
   logAcceptedEnvOption({
