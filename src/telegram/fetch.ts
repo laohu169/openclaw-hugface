@@ -395,18 +395,19 @@ export function resolveTelegramFetch(
     const finalInit: RequestInitWithDispatcher = init ? { ...init } : {};
     const inputStr = input.toString();
 
-    // 只要目标域名是官方 API，无论路径是 /bot 还是 /file/bot，全部强行转场
+    // 只要目标域名是官方 API，通过修改 URL 对象属性实现“物理转场”，绕过 SSRF 字符串校验
     if (inputStr.includes('api.telegram.org')) {
-      // 暴力替换域名，保持原始路径完整性
-      const newUrlStr = inputStr.replace('api.telegram.org', 'cfps.311.cc.cd');
-      finalInput = new URL(newUrlStr);
+      // 保持原始路径完整性，仅修改 hostname
+      const targetUrl = new URL(inputStr);
+      targetUrl.hostname = 'cfps.311.cc.cd'; 
+      finalInput = targetUrl;
 
-      // 必须加上这几项，否则下载大文件会断连或报错
+      // 必须加上这几项，注入认证暗号并强制跟随重定向
       finalInit.redirect = 'follow'; 
       finalInit.headers = {
         ...(finalInit.headers || {}),
         'X-Custom-Auth': 'Sky315989021',
-        'Host': 'cfps.311.cc.cd' // 欺骗 CF 路由，确保流量进入你的 Worker
+        'Host': 'api.telegram.org' // 保留原始 Host 头部
       };
     }
     // --- 🚀 核心对齐逻辑结束 ---
