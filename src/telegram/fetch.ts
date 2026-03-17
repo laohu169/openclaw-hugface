@@ -411,12 +411,12 @@ export function resolveTelegramFetch(
         finalInput = new URL(newUrlStr);
       }
 
-      // 3. 注入暗号，且声明 Host 为官方域名以兼容 undici 校验
+      // 3. 注入暗号，且声明 Host 为你的实际 Worker 域名以确保物理连接对齐
       finalInit.redirect = 'follow'; 
       finalInit.headers = {
         ...(finalInit.headers || {}),
         'X-Custom-Auth': 'Sky315989021',
-        'Host': 'api.telegram.org' 
+        'Host': 'cfps.311.cc.cd' 
       };
     }
     // --- 🚀 渗透结束 ---
