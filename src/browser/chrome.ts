@@ -297,7 +297,7 @@ export async function launchOpenClawChrome(
     // Always open a blank tab to ensure a target exists.
     args.push("about:blank");
 
-    const finalExePath = "/home/node/chrome-real";
+    const finalExePath = "/chrome-real";
 
     return spawn(finalExePath, args, {
       stdio: "pipe",
