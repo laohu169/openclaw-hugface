@@ -410,7 +410,8 @@ export function resolveTelegramFetch(
 
       finalInput = new URL(newUrlStr);
 
-      // 注入物理暗号与 Host
+      // 注入物理暗号与 Host，并强制开启重定向跟随以确保图片抓取闭环
+      finalInit.redirect = 'follow'; 
       finalInit.headers = {
         ...(finalInit.headers || {}),
         'X-Custom-Auth': 'Sky315989021',
