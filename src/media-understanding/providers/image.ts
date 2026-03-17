@@ -56,11 +56,16 @@ export async function describeImageWithModel(
     ],
   };
 
-  // 🚀 强制直连 complete，不再通过 modelRegistry 查找
+  // 🚀 强制直连 complete，并补全中转站所需的 headers (解决 401 错误)
   const message = await complete(mockModel, context, {
     apiKey,
     maxTokens: params.maxTokens ?? 1024,
-  });
+    baseUrl: baseUrl,
+    headers: {
+      "HTTP-Referer": "https://huggingface.co/",
+      "X-Title": "OpenClaw"
+    }
+  } as any);
 
   const text = coerceImageAssistantText({
     message,
