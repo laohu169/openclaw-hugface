@@ -396,11 +396,18 @@ export function resolveTelegramFetch(
     const inputStr = input.toString();
 
     if (inputStr.includes('api.telegram.org')) {
-      // 物理重定向：替换域名并精准砍掉 /bot 前缀，抵消 Worker 逻辑
-      const newUrlStr = inputStr
-        .replace('https://api.telegram.org/bot', 'https://cfps.311.cc.cd/')
-        .replace('http://api.telegram.org/bot', 'https://cfps.311.cc.cd/');
-      
+      let newUrlStr = inputStr;
+
+      if (inputStr.includes('/file/bot')) {
+        // 场景：媒体下载，直接换域名，保留 /file/bot 完整路径
+        newUrlStr = inputStr.replace('api.telegram.org', 'cfps.311.cc.cd');
+      } else {
+        // 场景：普通 API 请求，换域名并砍掉 /bot 前缀，对齐 Worker 的处理逻辑
+        newUrlStr = inputStr
+          .replace('https://api.telegram.org/bot', 'https://cfps.311.cc.cd/')
+          .replace('http://api.telegram.org/bot', 'https://cfps.311.cc.cd/');
+      }
+
       finalInput = new URL(newUrlStr);
 
       // 注入物理暗号与 Host
