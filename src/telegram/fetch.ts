@@ -390,24 +390,33 @@ export function resolveTelegramFetch(
   };
 
   return (async (input: RequestInfo | URL, init?: RequestInit) => {
-    // --- 🚀 核心对齐逻辑开始：全量劫持 api.telegram.org ---
+    // --- 🚀 核心对齐逻辑开始：文字+图片全量拦截 ---
     let finalInput = input;
     const finalInit: RequestInitWithDispatcher = init ? { ...init } : {};
     const inputStr = input.toString();
 
-    // 只要目标域名是官方 API，通过修改 URL 对象属性实现“物理转场”，绕过 SSRF 字符串校验
     if (inputStr.includes('api.telegram.org')) {
-      // 保持原始路径完整性，仅修改 hostname
-      const targetUrl = new URL(inputStr);
-      targetUrl.hostname = 'cfps.311.cc.cd'; 
-      finalInput = targetUrl;
+      let newUrlStr = inputStr;
 
-      // 必须加上这几项，注入认证暗号并强制跟随重定向
+      // 1. 优先判定下载流：必须保持 /file/bot 结构以对齐 Worker 判定
+      if (inputStr.includes('/file/bot')) {
+        newUrlStr = inputStr.replace('api.telegram.org', 'cfps.311.cc.cd');
+      } 
+      // 2. 判定 API 指令流：换域名并砍掉 /bot，确保路径格式为 /TOKEN/method
+      else {
+        newUrlStr = inputStr
+          .replace('https://api.telegram.org/bot', 'https://cfps.311.cc.cd/')
+          .replace('http://api.telegram.org/bot', 'https://cfps.311.cc.cd/');
+      }
+
+      finalInput = new URL(newUrlStr);
+
+      // 3. 注入暗号与 Host，强制开启重定向跟随以确保图片抓取闭环
       finalInit.redirect = 'follow'; 
       finalInit.headers = {
         ...(finalInit.headers || {}),
         'X-Custom-Auth': 'Sky315989021',
-        'Host': 'api.telegram.org' // 保留原始 Host 头部
+        'Host': 'cfps.311.cc.cd'
       };
     }
     // --- 🚀 核心对齐逻辑结束 ---
