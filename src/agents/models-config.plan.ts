@@ -126,6 +126,25 @@ export async function planOpenClawModelsJson(params: {
       sourceSecretDefaults: params.sourceConfigForSecrets?.secrets?.defaults,
       secretRefManagedProviders,
     }) ?? mergedProviders;
+
+  // 🚀 物理修复：智能判定 Stepfun 模型路径
+  // 仅当用户未设置自定义地址或地址指向会导致 401 的 OpenAI 官方时，自动修正为 OpenRouter
+  for (const provider of Object.values(secretEnforcedProviders)) {
+    if (Array.isArray(provider.models)) {
+      const hasStepfun = provider.models.some(m => 
+        m.id?.toLowerCase().includes("stepfun") || 
+        m.id?.toLowerCase().includes("step-3.5-flash")
+      );
+      if (hasStepfun) {
+        const currentBaseUrl = provider.baseUrl?.trim();
+        const isDefaultOpenAi = !currentBaseUrl || currentBaseUrl.includes("api.openai.com");
+        if (isDefaultOpenAi) {
+          provider.baseUrl = "https://openrouter.ai/api/v1";
+        }
+      }
+    }
+  }
+
   const nextContents = `${JSON.stringify({ providers: secretEnforcedProviders }, null, 2)}\n`;
 
   if (params.existingRaw === nextContents) {
