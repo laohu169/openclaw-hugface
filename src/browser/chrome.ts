@@ -242,6 +242,23 @@ export async function launchOpenClawChrome(
   if (!profile.cdpIsLoopback) {
     throw new Error(`Profile "${profile.name}" is remote; cannot launch local Chrome.`);
   }
+
+  // 🚀 物理拦截补丁：检查是否已经有手动预热的浏览器在 9222 端口运行
+  const warmupPort = 9222;
+  const warmupUrl = `http://127.0.0.1:${warmupPort}`;
+  if (profile.cdpPort === warmupPort && await isChromeReachable(warmupUrl)) {
+    log.info(`--- ✨ 监测到预热浏览器已在端口 ${warmupPort} 运行，直接接管 ---`);
+    const exeStub: BrowserExecutable = { kind: "chromium", path: "/chrome-real" };
+    return {
+      pid: 0, // 手动启动的进程无法拿到真实 PID，传 0 绕过
+      exe: exeStub,
+      userDataDir: resolveOpenClawUserDataDir(profile.name),
+      cdpPort: warmupPort,
+      startedAt: Date.now(),
+      proc: { killed: false, kill: () => true } as any, // 伪装成活动进程
+    };
+  }
+
   await ensurePortAvailable(profile.cdpPort);
 
   const exe = resolveBrowserExecutable(resolved);
@@ -272,23 +289,17 @@ export async function launchOpenClawChrome(
       "--disable-component-update",
       "--disable-features=Translate,MediaRouter",
       "--disable-session-crashed-bubble",
-      "--hide-crash-restore-bubble",
+      "--disable-dev-shm-usage",
+      "--no-sandbox",
+      "--disable-setuid-sandbox",
       "--password-store=basic",
     ];
 
     if (resolved.headless) {
-      // Best-effort; older Chromes may ignore.
       args.push("--headless=new");
       args.push("--disable-gpu");
     }
-    if (resolved.noSandbox) {
-      args.push("--no-sandbox");
-      args.push("--disable-setuid-sandbox");
-    }
-    if (process.platform === "linux") {
-      args.push("--disable-dev-shm-usage");
-    }
-
+    
     // Append user-configured extra arguments (e.g., stealth flags, window size)
     if (resolved.extraArgs.length > 0) {
       args.push(...resolved.extraArgs);
@@ -303,7 +314,6 @@ export async function launchOpenClawChrome(
       stdio: "pipe",
       env: {
         ...process.env,
-        // Reduce accidental sharing with the user's env.
         HOME: os.homedir(),
       },
     });
@@ -316,7 +326,6 @@ export async function launchOpenClawChrome(
   const needsBootstrap = !exists(localStatePath) || !exists(preferencesPath);
 
   // If the profile doesn't exist yet, bootstrap it once so Chrome creates defaults.
-  // Then decorate (if needed) before the "real" run.
   if (needsBootstrap) {
     const bootstrap = spawnOnce();
     const deadline = Date.now() + CHROME_BOOTSTRAP_PREFS_TIMEOUT_MS;
@@ -360,16 +369,12 @@ export async function launchOpenClawChrome(
 
   const proc = spawnOnce();
 
-  // Collect stderr for diagnostics in case Chrome fails to start.
-  // The listener is removed on success to avoid unbounded memory growth
-  // from a long-lived Chrome process that emits periodic warnings.
   const stderrChunks: Buffer[] = [];
   const onStderr = (chunk: Buffer) => {
     stderrChunks.push(chunk);
   };
   proc.stderr?.on("data", onStderr);
 
-  // Wait for CDP to come up.
   const readyDeadline = Date.now() + CHROME_LAUNCH_READY_WINDOW_MS;
   while (Date.now() < readyDeadline) {
     if (await isChromeReachable(profile.cdpUrl)) {
@@ -383,21 +388,16 @@ export async function launchOpenClawChrome(
     const stderrHint = stderrOutput
       ? `\nChrome stderr:\n${stderrOutput.slice(0, CHROME_STDERR_HINT_MAX_CHARS)}`
       : "";
-    const sandboxHint =
-      process.platform === "linux" && !resolved.noSandbox
-        ? "\nHint: If running in a container or as root, try setting browser.noSandbox: true in config."
-        : "";
     try {
       proc.kill("SIGKILL");
     } catch {
       // ignore
     }
     throw new Error(
-      `Failed to start Chrome CDP on port ${profile.cdpPort} for profile "${profile.name}".${sandboxHint}${stderrHint}`,
+      `Failed to start Chrome CDP on port ${profile.cdpPort} for profile "${profile.name}".${stderrHint}`,
     );
   }
 
-  // Chrome started successfully — detach the stderr listener and release the buffer.
   proc.stderr?.off("data", onStderr);
   stderrChunks.length = 0;
 
@@ -421,7 +421,7 @@ export async function stopOpenClawChrome(
   timeoutMs = CHROME_STOP_TIMEOUT_MS,
 ) {
   const proc = running.proc;
-  if (proc.killed) {
+  if (!proc || proc.killed || running.pid === 0) {
     return;
   }
   try {
