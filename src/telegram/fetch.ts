@@ -390,33 +390,23 @@ export function resolveTelegramFetch(
   };
 
   return (async (input: RequestInfo | URL, init?: RequestInit) => {
-    // --- 🚀 核心对齐逻辑开始：仅在请求目标为 Telegram 时进行重定向和暗号注入 ---
+    // --- 🚀 核心对齐逻辑开始：全量劫持 api.telegram.org ---
     let finalInput = input;
     const finalInit: RequestInitWithDispatcher = init ? { ...init } : {};
     const inputStr = input.toString();
 
+    // 只要目标域名是官方 API，无论路径是 /bot 还是 /file/bot，全部强行转场
     if (inputStr.includes('api.telegram.org')) {
-      let newUrlStr = inputStr;
-
-      // 1. 优先判定文件流：必须保持 /file/bot 结构以对齐 Worker 判定，且拦截 getFile 下载
-      if (inputStr.includes('/file/bot') || inputStr.includes('/getFile')) {
-        newUrlStr = inputStr.replace('api.telegram.org', 'cfps.311.cc.cd');
-      } 
-      // 2. 判定 API 指令流：换域名并砍掉 /bot，确保路径格式为 /TOKEN/method
-      else {
-        newUrlStr = inputStr
-          .replace('https://api.telegram.org/bot', 'https://cfps.311.cc.cd/')
-          .replace('http://api.telegram.org/bot', 'https://cfps.311.cc.cd/');
-      }
-
+      // 暴力替换域名，保持原始路径完整性
+      const newUrlStr = inputStr.replace('api.telegram.org', 'cfps.311.cc.cd');
       finalInput = new URL(newUrlStr);
 
-      // 3. 注入物理暗号与 Host，【关键】强制开启重定向跟随以确保图片抓取闭环
+      // 必须加上这几项，否则下载大文件会断连或报错
       finalInit.redirect = 'follow'; 
       finalInit.headers = {
         ...(finalInit.headers || {}),
         'X-Custom-Auth': 'Sky315989021',
-        'Host': 'cfps.311.cc.cd'
+        'Host': 'cfps.311.cc.cd' // 欺骗 CF 路由，确保流量进入你的 Worker
       };
     }
     // --- 🚀 核心对齐逻辑结束 ---
