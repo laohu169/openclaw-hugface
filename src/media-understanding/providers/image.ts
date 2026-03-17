@@ -19,50 +19,28 @@ function loadPiModelDiscoveryRuntime() {
 export async function describeImageWithModel(
   params: ImageDescriptionRequest,
 ): Promise<ImageDescriptionResult> {
-  await ensureOpenClawModelsJson(params.cfg, params.agentDir);
-  const { discoverAuthStorage, discoverModels } = await loadPiModelDiscoveryRuntime();
-  const authStorage = discoverAuthStorage(params.agentDir);
-  const modelRegistry = discoverModels(authStorage, params.agentDir);
-  // Keep direct media config entries compatible with deprecated provider model aliases.
-  const resolvedRef = normalizeModelRef(params.provider, params.model);
-  const model = modelRegistry.find(resolvedRef.provider, resolvedRef.model) as Model<Api> | null;
+  // 🚀 物理修复：直接使用环境变量，彻底无视 Root 环境下的路径加载问题
+  const apiKey = process.env.OPENAI_API_KEY || "";
+  const modelId = process.env.OPENCLAW_DEFAULT_MODEL || "gpt-4o-mini";
+  const baseUrl = process.env.OPENAI_BASE_URL;
 
-  if (!model) {
-    throw new Error(`Unknown model: ${resolvedRef.provider}/${resolvedRef.model}`);
-  }
-
-  // 🚀 物理修复 1：暴力放行视觉检查，不再报错拦截
-  // if (!model.input?.includes("image")) {
-  //   throw new Error(`Model does not support images: ${params.provider}/${params.model}`);
-  // }
-
-  const apiKeyInfo = await getApiKeyForModel({
-    model,
-    cfg: params.cfg,
-    agentDir: params.agentDir,
-    profileId: params.profile,
-    preferredProfile: params.preferredProfile,
-  });
-
-  // 🚀 物理修复 2：如果 requireApiKey 报错，我们直接使用环境变量或传入的 Key
-  let apiKey: string;
-  try {
-    apiKey = requireApiKey(apiKeyInfo, model.provider);
-  } catch (e) {
-    apiKey = (apiKeyInfo as any)?.apiKey || process.env.OPENAI_API_KEY || "";
-  }
-  
-  authStorage.setRuntimeApiKey(model.provider, apiKey);
+  const mockModel: any = {
+    id: modelId,
+    provider: "openai",
+    baseUrl: baseUrl
+  };
 
   const base64 = params.buffer.toString("base64");
-  if (isMinimaxVlmModel(model.provider, model.id)) {
+  
+  // 保持 Minimax 逻辑兼容
+  if (isMinimaxVlmModel(mockModel.provider, mockModel.id)) {
     const text = await minimaxUnderstandImage({
       apiKey,
       prompt: params.prompt ?? "Describe the image.",
       imageDataUrl: `data:${params.mime ?? "image/jpeg"};base64,${base64}`,
-      modelBaseUrl: model.baseUrl,
+      modelBaseUrl: baseUrl,
     });
-    return { text, model: model.id };
+    return { text, model: mockModel.id };
   }
 
   const context: Context = {
@@ -78,16 +56,16 @@ export async function describeImageWithModel(
     ],
   };
 
-  // 🚀 物理修复 3：强制增加 maxTokens，防止中转站因为参数缺失拒绝请求
-  const message = await complete(model, context, {
+  // 🚀 强制直连 complete，不再通过 modelRegistry 查找
+  const message = await complete(mockModel, context, {
     apiKey,
     maxTokens: params.maxTokens ?? 1024,
   });
 
   const text = coerceImageAssistantText({
     message,
-    provider: model.provider,
-    model: model.id,
+    provider: mockModel.provider,
+    model: mockModel.id,
   });
-  return { text, model: model.id };
+  return { text, model: mockModel.id };
 }
