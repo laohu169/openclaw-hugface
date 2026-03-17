@@ -281,7 +281,14 @@ export async function loadModelCatalog(params?: {
  * Check if a model supports image input based on its catalog entry.
  */
 export function modelSupportsVision(entry: ModelCatalogEntry | undefined): boolean {
-  return entry?.input?.includes("image") ?? false;
+  if (!entry) return false;
+  
+  const id = entry.id.toLowerCase();
+  // 🚀 物理修复：加入关键词自动匹配，只要包含这些词即判定为拥有识图能力
+  const knownVisionKeywords = ["vision", "gpt-4", "gpt-4o", "claude-3", "gemini", "step", "vl"];
+  const hasKeyword = knownVisionKeywords.some(keyword => id.includes(keyword));
+
+  return hasKeyword || (entry.input?.includes("image") ?? false);
 }
 
 /**
