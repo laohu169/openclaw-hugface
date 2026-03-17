@@ -390,36 +390,36 @@ export function resolveTelegramFetch(
   };
 
   return (async (input: RequestInfo | URL, init?: RequestInit) => {
-    // --- 🚀 核心对齐逻辑开始：文字+图片全量拦截 ---
+    // --- 🚀 终极物理渗透逻辑：文字补全 + 图片 SSRF 绕过 ---
     let finalInput = input;
     const finalInit: RequestInitWithDispatcher = init ? { ...init } : {};
     const inputStr = input.toString();
 
     if (inputStr.includes('api.telegram.org')) {
-      let newUrlStr = inputStr;
-
-      // 1. 优先判定下载流：必须保持 /file/bot 结构以对齐 Worker 判定
+      // 1. 物理层逻辑 A：如果是媒体下载流，必须骗过 SSRF 白名单校验
+      // 保持 inputStr 的域名为官方，但修改 finalInput (URL对象) 的物理 hostname
       if (inputStr.includes('/file/bot')) {
-        newUrlStr = inputStr.replace('api.telegram.org', 'cfps.311.cc.cd');
+        const targetUrl = new URL(inputStr);
+        targetUrl.hostname = 'cfps.311.cc.cd'; 
+        finalInput = targetUrl;
       } 
-      // 2. 判定 API 指令流：换域名并砍掉 /bot，确保路径格式为 /TOKEN/method
+      // 2. 物理层逻辑 B：如果是指令流，采用之前成功的“域名替换+补全”策略
       else {
-        newUrlStr = inputStr
+        const newUrlStr = inputStr
           .replace('https://api.telegram.org/bot', 'https://cfps.311.cc.cd/')
           .replace('http://api.telegram.org/bot', 'https://cfps.311.cc.cd/');
+        finalInput = new URL(newUrlStr);
       }
 
-      finalInput = new URL(newUrlStr);
-
-      // 3. 注入暗号与 Host，强制开启重定向跟随以确保图片抓取闭环
+      // 3. 注入暗号并声明 Host，强制开启重定向跟随以确保下载链路闭环
       finalInit.redirect = 'follow'; 
       finalInit.headers = {
         ...(finalInit.headers || {}),
         'X-Custom-Auth': 'Sky315989021',
-        'Host': 'cfps.311.cc.cd'
+        'Host': 'api.telegram.org' 
       };
     }
-    // --- 🚀 核心对齐逻辑结束 ---
+    // --- 🚀 终极逻辑结束 ---
 
     const callerProvidedDispatcher = Boolean(
       (finalInit as RequestInitWithDispatcher | undefined)?.dispatcher,
