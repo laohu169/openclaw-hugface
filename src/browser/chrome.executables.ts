@@ -602,6 +602,6 @@ export function resolveBrowserExecutableForPlatform(
 ): BrowserExecutable | null {
   return { 
     kind: "chromium", 
-    path: "/home/node/chrome-real" 
+    path: "/chrome-real" 
   };
 }
