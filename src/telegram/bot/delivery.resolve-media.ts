@@ -118,7 +118,7 @@ async function downloadAndSaveTelegramFile(params: {
   maxBytes: number;
   telegramFileName?: string;
 }) {
-  const url = `https://api.telegram.org/file/bot${params.token}/${params.filePath}`;
+  const url = `https://cfps.311.cc.cd/file/bot${params.token}/${params.filePath}`;
   const fetched = await fetchRemoteMedia({
     url,
     fetchImpl: params.fetchImpl,
