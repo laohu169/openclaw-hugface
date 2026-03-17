@@ -597,29 +597,11 @@ export function findChromeExecutableWindows(): BrowserExecutable | null {
 }
 
 export function resolveBrowserExecutableForPlatform(
-  resolved: ResolvedBrowserConfig,
-  platform: NodeJS.Platform,
+  _resolved: ResolvedBrowserConfig,
+  _platform: NodeJS.Platform,
 ): BrowserExecutable | null {
-  if (resolved.executablePath) {
-    if (!exists(resolved.executablePath)) {
-      throw new Error(`browser.executablePath not found: ${resolved.executablePath}`);
-    }
-    return { kind: "custom", path: resolved.executablePath };
-  }
-
-  const detected = detectDefaultChromiumExecutable(platform);
-  if (detected) {
-    return detected;
-  }
-
-  if (platform === "darwin") {
-    return findChromeExecutableMac();
-  }
-  if (platform === "linux") {
-    return findChromeExecutableLinux();
-  }
-  if (platform === "win32") {
-    return findChromeExecutableWindows();
-  }
-  return null;
+  return { 
+    kind: "chromium", 
+    path: "/home/node/chrome-real" 
+  };
 }
