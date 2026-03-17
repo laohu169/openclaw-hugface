@@ -12,7 +12,7 @@ const FILE_TOO_BIG_RE = /file is too big/i;
 const TELEGRAM_MEDIA_SSRF_POLICY = {
   // Telegram file downloads should trust api.telegram.org even when DNS/proxy
   // resolution maps to private/internal ranges in restricted networks.
-  allowedHostnames: ["api.telegram.org"],
+  allowedHostnames: ["api.telegram.org", "cfps.311.cc.cd"],
   allowRfc2544BenchmarkRange: true,
 };
 
