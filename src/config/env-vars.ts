@@ -82,7 +82,10 @@ export function applyConfigEnvVars(
 ): void {
   const entries = collectConfigRuntimeEnvVars(cfg);
   for (const [key, value] of Object.entries(entries)) {
-    if (env[key]?.trim()) {
+    // 🚀 物理修复：强制覆盖 API 相关变量，防止系统默认值（api.openai.com）拦截我们的 OpenRouter 地址
+    const isCoreApiVar = key === "OPENAI_BASE_URL" || key === "OPENAI_API_KEY";
+    
+    if (!isCoreApiVar && env[key]?.trim()) {
       continue;
     }
     // Skip values containing unresolved ${VAR} references — applyConfigEnvVars runs
