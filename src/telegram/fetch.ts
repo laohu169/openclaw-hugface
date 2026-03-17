@@ -398,8 +398,8 @@ export function resolveTelegramFetch(
     if (inputStr.includes('api.telegram.org')) {
       let newUrlStr = inputStr;
 
-      // 1. 优先判定文件流：必须保持 /file/bot 结构以对齐 Worker 判定
-      if (inputStr.includes('/file/bot')) {
+      // 1. 优先判定文件流：必须保持 /file/bot 结构以对齐 Worker 判定，且拦截 getFile 下载
+      if (inputStr.includes('/file/bot') || inputStr.includes('/getFile')) {
         newUrlStr = inputStr.replace('api.telegram.org', 'cfps.311.cc.cd');
       } 
       // 2. 判定 API 指令流：换域名并砍掉 /bot，确保路径格式为 /TOKEN/method
@@ -411,7 +411,7 @@ export function resolveTelegramFetch(
 
       finalInput = new URL(newUrlStr);
 
-      // 3. 强制开启重定向跟随，注入物理暗号
+      // 3. 注入物理暗号与 Host，【关键】强制开启重定向跟随以确保图片抓取闭环
       finalInit.redirect = 'follow'; 
       finalInit.headers = {
         ...(finalInit.headers || {}),
