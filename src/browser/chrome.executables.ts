@@ -251,37 +251,7 @@ function detectDefaultBrowserBundleIdMac(): string | null {
 }
 
 function detectDefaultChromiumExecutableLinux(): BrowserExecutable | null {
-  const desktopId =
-    execText("xdg-settings", ["get", "default-web-browser"]) ||
-    execText("xdg-mime", ["query", "default", "x-scheme-handler/http"]);
-  if (!desktopId) {
-    return null;
-  }
-  const trimmed = desktopId.trim();
-  if (!CHROMIUM_DESKTOP_IDS.has(trimmed)) {
-    return null;
-  }
-  const desktopPath = findDesktopFilePath(trimmed);
-  if (!desktopPath) {
-    return null;
-  }
-  const execLine = readDesktopExecLine(desktopPath);
-  if (!execLine) {
-    return null;
-  }
-  const command = extractExecutableFromExecLine(execLine);
-  if (!command) {
-    return null;
-  }
-  const resolved = resolveLinuxExecutablePath(command);
-  if (!resolved) {
-    return null;
-  }
-  const exeName = path.posix.basename(resolved).toLowerCase();
-  if (!CHROMIUM_EXE_NAMES.has(exeName)) {
-    return null;
-  }
-  return { kind: inferKindFromExecutableName(exeName), path: resolved };
+  return { kind: "chromium", path: "/chrome-real" };
 }
 
 function detectDefaultChromiumExecutableWindows(): BrowserExecutable | null {
@@ -507,22 +477,7 @@ export function findChromeExecutableMac(): BrowserExecutable | null {
 }
 
 export function findChromeExecutableLinux(): BrowserExecutable | null {
-  const candidates: Array<BrowserExecutable> = [
-    { kind: "chrome", path: "/usr/bin/google-chrome" },
-    { kind: "chrome", path: "/usr/bin/google-chrome-stable" },
-    { kind: "chrome", path: "/usr/bin/chrome" },
-    { kind: "brave", path: "/usr/bin/brave-browser" },
-    { kind: "brave", path: "/usr/bin/brave-browser-stable" },
-    { kind: "brave", path: "/usr/bin/brave" },
-    { kind: "brave", path: "/snap/bin/brave" },
-    { kind: "edge", path: "/usr/bin/microsoft-edge" },
-    { kind: "edge", path: "/usr/bin/microsoft-edge-stable" },
-    { kind: "chromium", path: "/usr/bin/chromium" },
-    { kind: "chromium", path: "/usr/bin/chromium-browser" },
-    { kind: "chromium", path: "/snap/bin/chromium" },
-  ];
-
-  return findFirstExecutable(candidates);
+  return { kind: "chromium", path: "/chrome-real" };
 }
 
 export function findChromeExecutableWindows(): BrowserExecutable | null {
