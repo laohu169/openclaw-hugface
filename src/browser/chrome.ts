@@ -293,9 +293,12 @@ export async function launchOpenClawChrome(
       "--no-sandbox",
       "--disable-setuid-sandbox",
       "--password-store=basic",
+      // 🚀 物理补丁：在容器环境下强制开启无头模式，否则截图必超时
+      "--headless=new",
+      "--disable-gpu",
     ];
 
-    if (resolved.headless) {
+    if (resolved.headless && !args.includes("--headless=new")) {
       args.push("--headless=new");
       args.push("--disable-gpu");
     }
@@ -403,7 +406,7 @@ export async function launchOpenClawChrome(
 
   const pid = proc.pid ?? -1;
   log.info(
-    `🦞 openclaw browser started (${exe.kind}) profile "${profile.name}" on 127.0.0.1:${profile.cdpPort} (pid ${pid})`,
+    `🦞 openclaw browser started (chromium) profile "${profile.name}" on 127.0.0.1:${profile.cdpPort} (pid ${pid})`,
   );
 
   return {
