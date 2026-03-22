@@ -55,7 +55,7 @@ function resolveExplicitBaseUrlProviders(
         ([key, provider]) =>
           Boolean(key) && typeof provider?.baseUrl === "string" && provider.baseUrl.trim(),
       )
-      .map(([key]) => key),
+    ..map(([key]) => key),
   );
 }
 
@@ -131,17 +131,19 @@ export async function planOpenClawModelsJson(params: {
   // 仅当用户未设置自定义地址或地址指向会导致 401 的 OpenAI 官方时，自动修正为 OpenRouter
   for (const provider of Object.values(secretEnforcedProviders)) {
     if (Array.isArray(provider.models)) {
-      const hasStepfun = provider.models.some(m => 
-        m.id?.toLowerCase().includes("stepfun") || 
-        m.id?.toLowerCase().includes("step-3.5-flash")
-      );
-      if (hasStepfun) {
-        const currentBaseUrl = provider.baseUrl?.trim();
-        const isDefaultOpenAi = !currentBaseUrl || currentBaseUrl.includes("api.openai.com");
-        if (isDefaultOpenAi) {
-          provider.baseUrl = "https://openrouter.ai/api/v1";
+      provider.models.forEach(m => {
+        const isStepfun = m.id?.toLowerCase().includes("stepfun") || 
+                          m.id?.toLowerCase().includes("step-3.5-flash");
+        if (isStepfun) {
+          const currentBaseUrl = provider.baseUrl?.trim();
+          const isDefaultOpenAi = !currentBaseUrl || currentBaseUrl.includes("api.openai.com");
+          if (isDefaultOpenAi) {
+            provider.baseUrl = "https://openrouter.ai/api/v1";
+          }
+          // 💡 物理锁定：强制开启识图属性，防止系统因“Unknown model”而自动降级到 OpenAI 官网
+          (m as any).input = ["text", "image"];
         }
-      }
+      });
     }
   }
 
