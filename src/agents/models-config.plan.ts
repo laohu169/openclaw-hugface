@@ -55,7 +55,7 @@ function resolveExplicitBaseUrlProviders(
         ([key, provider]) =>
           Boolean(key) && typeof provider?.baseUrl === "string" && provider.baseUrl.trim(),
       )
-    ..map(([key]) => key),
+      .map(([key]) => key),
   );
 }
 
