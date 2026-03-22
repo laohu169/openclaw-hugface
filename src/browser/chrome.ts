@@ -293,7 +293,7 @@ export async function launchOpenClawChrome(
       "--no-sandbox",
       "--disable-setuid-sandbox",
       "--password-store=basic",
-      // 🚀 物理补丁：在容器环境下强制开启无头模式，否则截图必超时
+      // 🚀 物理补丁：在容器环境下强制开启无头模式，并禁用 shm 使用防止内存溢出
       "--headless=new",
       "--disable-gpu",
     ];
