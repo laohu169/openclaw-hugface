@@ -7,8 +7,10 @@ import {
   requireTranscriptionText,
 } from "../shared.js";
 
-export const DEFAULT_OPENAI_AUDIO_BASE_URL = "https://api.openai.com/v1";
-const DEFAULT_OPENAI_AUDIO_MODEL = "gpt-4o-mini-transcribe";
+export const DEFAULT_OPENAI_AUDIO_BASE_URL = "https://integrate.api.nvidia.com/v1";
+const DEFAULT_OPENAI_AUDIO_MODEL = "mistralai/mistral-small-4-119b-2603";
+//export const DEFAULT_OPENAI_AUDIO_BASE_URL = "https://api.openai.com/v1";
+//const DEFAULT_OPENAI_AUDIO_MODEL = "gpt-4o-mini-transcribe";
 
 function resolveModel(model?: string): string {
   const trimmed = model?.trim();
