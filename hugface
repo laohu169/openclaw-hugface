@@ -32,7 +32,7 @@ CMD ["sh", "-c", "\
     },\n\
     \"models\": {\n\
       \"providers\": {\n\
-        \"openai/": {\n\
+        \"openai\": {\n\
           \"baseUrl\": \"'\"$OPENAI_BASE_URL\"'\",\n\
           \"apiKey\": \"'\"$OPENAI_API_KEY\"'\",\n\
           \"models\": [\n\
@@ -57,7 +57,7 @@ CMD ["sh", "-c", "\
         {\n\
           \"id\": \"main\",\n\
           \"name\": \"baico110_bot\",\n\
-          \"model\": \"'\"$OPENCLAW_DEFAULT_MODEL\"'\"\n\
+          \"model\": \"openai/'\"$OPENCLAW_DEFAULT_MODEL\"'\"\n\
         }\n\
       ]\n\
     }\n\
