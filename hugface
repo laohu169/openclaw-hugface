@@ -57,7 +57,7 @@ CMD ["sh", "-c", "\
         {\n\
           \"id\": \"main\",\n\
           \"name\": \"baico110_bot\",\n\
-          \"model\": \"openai/'\"$OPENCLAW_DEFAULT_MODEL\"'\"\n\
+          \"model\": \"'\"$OPENCLAW_DEFAULT_MODEL\"'\"\n\
         }\n\
       ]\n\
     }\n\
